@@ -1,0 +1,25 @@
+{
+    "name": "Sky Ledger",
+    "short_name": "Sky Ledger",
+    "description": "Your personal task ledger",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#e8f4fc",
+    "theme_color": "#e8f4fc",
+    "icons": [
+        {
+            "src": "/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

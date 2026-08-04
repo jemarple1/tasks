@@ -1,0 +1,122 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-sky-light: #e8f4fc;
+    --color-sky-mid: #d4ecf9;
+    --color-sky-pale: #f0f9ff;
+    --color-sky-task: #e0f2fe;
+    --color-sky-deep: #1e3a5f;
+    --color-sky-card: #1a4480;
+    --color-sky-accent: #2563eb;
+    --color-sky-muted: #4a6fa5;
+}
+
+html {
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    overscroll-behavior: none;
+}
+
+.pt-safe {
+    padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.pb-safe-fab {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+.task-swipe-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+}
+
+.task-swipe-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 1.25rem;
+    background: linear-gradient(135deg, #0d9488, #059669);
+    border-radius: 1rem;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.task-swipe-content {
+    position: relative;
+    z-index: 1;
+    transition: transform 0.2s ease-out;
+    touch-action: pan-y;
+}
+
+.task-swipe-content.swiping {
+    transition: none;
+}
+
+.task-swipe-content.archiving {
+    transition: transform 0.25s ease-in, opacity 0.25s ease-in;
+}
+
+.modal-backdrop {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.modal-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-sheet {
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.modal-backdrop.open .modal-sheet {
+    transform: translateY(0);
+}
+
+.fab {
+    bottom: max(1.5rem, env(safe-area-inset-bottom));
+    right: max(1.5rem, env(safe-area-inset-right));
+    box-shadow: 0 8px 24px rgba(26, 68, 128, 0.45);
+}
+
+.fab:active {
+    transform: scale(0.94);
+}
+
+.tab-indicator {
+    transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.task-enter {
+    animation: fade-in-up 0.35s ease-out;
+}
