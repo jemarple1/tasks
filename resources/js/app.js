@@ -1,4 +1,5 @@
 const SWIPE_THRESHOLD = 72;
+const TAP_MOVE_THRESHOLD = 8;
 
 function initTabs() {
     const tabs = document.querySelectorAll('[data-tab]');
@@ -27,31 +28,65 @@ function initTabs() {
     });
 }
 
-function initModal() {
-    const backdrop = document.getElementById('add-modal');
+function initTaskModal() {
+    const backdrop = document.getElementById('task-modal');
     const openBtn = document.getElementById('fab-add');
     const closeBtn = document.getElementById('modal-close');
-    const form = document.getElementById('add-task-form');
+    const form = document.getElementById('task-form');
+    const methodInput = document.getElementById('task-form-method');
+    const modalTitle = document.getElementById('task-modal-title');
+    const submitBtn = document.getElementById('task-form-submit');
+    const titleInput = document.getElementById('task-title');
+    const notesInput = document.getElementById('task-notes');
 
-    if (!backdrop || !openBtn) return;
+    if (!backdrop || !openBtn || !form) return;
+
+    const storeUrl = form.action;
+
+    const setCategory = (category) => {
+        form.querySelectorAll('input[name="category"]').forEach((radio) => {
+            radio.checked = radio.value === category;
+        });
+    };
 
     const open = () => {
         backdrop.classList.add('open');
         document.body.classList.add('modal-open');
-        setTimeout(() => {
-            backdrop.querySelector('input[name="title"]')?.focus();
-        }, 100);
+        setTimeout(() => titleInput?.focus(), 100);
     };
 
     const close = () => {
         backdrop.classList.remove('open');
         document.body.classList.remove('modal-open');
-        form?.reset();
+        form.reset();
+        form.action = storeUrl;
+        methodInput.value = '';
+        methodInput.disabled = true;
+        modalTitle.textContent = 'New task';
+        submitBtn.textContent = 'Plant task';
+        setCategory('immediate');
+    };
+
+    const openAdd = () => {
+        close();
+        open();
+    };
+
+    const openEdit = (wrapper) => {
+        form.action = wrapper.dataset.updateUrl;
+        methodInput.value = 'PATCH';
+        methodInput.disabled = false;
+        modalTitle.textContent = 'Edit task';
+        submitBtn.textContent = 'Save changes';
+        titleInput.value = wrapper.dataset.taskTitle || '';
+        notesInput.value = wrapper.dataset.taskNotes || '';
+        setCategory(wrapper.dataset.taskCategory || 'immediate');
+        open();
     };
 
     openBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        open();
+        openAdd();
     });
 
     closeBtn?.addEventListener('click', (e) => {
@@ -62,6 +97,8 @@ function initModal() {
     backdrop.addEventListener('click', (e) => {
         if (e.target === backdrop) close();
     });
+
+    window.openTaskEdit = openEdit;
 }
 
 function plantFlowers(flowers) {
@@ -89,24 +126,31 @@ function initSwipeActions() {
         if (!content) return;
 
         let startX = 0;
+        let startY = 0;
         let currentX = 0;
         let dragging = false;
+        let moved = false;
 
         const reset = () => {
             content.style.transform = '';
             content.classList.remove('swiping', 'animating-out');
         };
 
-        const onStart = (x) => {
+        const onStart = (x, y) => {
             startX = x;
+            startY = y;
             currentX = 0;
             dragging = true;
+            moved = false;
             content.classList.add('swiping');
         };
 
-        const onMove = (x) => {
+        const onMove = (x, y) => {
             if (!dragging) return;
             currentX = x - startX;
+            if (Math.abs(currentX) > TAP_MOVE_THRESHOLD || Math.abs(y - startY) > TAP_MOVE_THRESHOLD) {
+                moved = true;
+            }
             const clamped = Math.max(-140, Math.min(140, currentX));
             content.style.transform = `translateX(${clamped}px)`;
         };
@@ -115,6 +159,12 @@ function initSwipeActions() {
             if (!dragging) return;
             dragging = false;
             content.classList.remove('swiping');
+
+            if (!moved && Math.abs(currentX) < TAP_MOVE_THRESHOLD) {
+                reset();
+                window.openTaskEdit?.(wrapper);
+                return;
+            }
 
             if (currentX <= -SWIPE_THRESHOLD) {
                 content.classList.add('animating-out');
@@ -151,7 +201,7 @@ function initSwipeActions() {
                     const data = await response.json();
                     const expiryEl = wrapper.querySelector('[data-expiry]');
                     if (expiryEl && data.days_remaining !== undefined) {
-                        expiryEl.textContent = `${data.days_remaining}d left`;
+                        expiryEl.textContent = `${data.days_remaining}d`;
                         expiryEl.classList.add('expiry-refreshed');
                     }
                 } catch {
@@ -162,13 +212,13 @@ function initSwipeActions() {
             reset();
         };
 
-        content.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX), { passive: true });
-        content.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX), { passive: true });
+        content.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+        content.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
         content.addEventListener('touchend', onEnd);
 
-        content.addEventListener('mousedown', (e) => onStart(e.clientX));
+        content.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
         document.addEventListener('mousemove', (e) => {
-            if (dragging) onMove(e.clientX);
+            if (dragging) onMove(e.clientX, e.clientY);
         });
         document.addEventListener('mouseup', () => {
             if (dragging) onEnd();
@@ -178,6 +228,6 @@ function initSwipeActions() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
-    initModal();
+    initTaskModal();
     initSwipeActions();
 });

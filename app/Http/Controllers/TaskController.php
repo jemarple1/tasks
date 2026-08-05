@@ -32,6 +32,7 @@ class TaskController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
             'category' => ['required', 'in:immediate,longterm'],
         ]);
 
@@ -39,6 +40,19 @@ class TaskController extends Controller
             ...$validated,
             'expires_at' => now()->addDays(7),
         ]);
+
+        return redirect()->route('tasks.index');
+    }
+
+    public function update(Request $request, Task $task): RedirectResponse
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'category' => ['required', 'in:immediate,longterm'],
+        ]);
+
+        $task->update($validated);
 
         return redirect()->route('tasks.index');
     }
