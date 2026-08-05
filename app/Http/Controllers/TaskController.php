@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GardenFlower;
 use App\Models\Task;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -12,8 +13,17 @@ class TaskController extends Controller
 {
     public function index(): View
     {
-        $immediateTasks = auth()->user()->tasks()->active()->category('immediate')->latest()->get();
-        $longtermTasks = auth()->user()->tasks()->active()->category('longterm')->latest()->get();
+        $user = auth()->user();
+
+        $user->tasks()
+            ->active()
+            ->where('expires_at', '<=', now())
+            ->update(['archived_at' => now()]);
+
+        $user->gardenFlowers()->where('expires_at', '<=', now())->delete();
+
+        $immediateTasks = $user->tasks()->active()->notExpired()->category('immediate')->latest()->get();
+        $longtermTasks = $user->tasks()->active()->notExpired()->category('longterm')->latest()->get();
 
         return view('tasks.index', compact('immediateTasks', 'longtermTasks'));
     }
@@ -25,22 +35,45 @@ class TaskController extends Controller
             'category' => ['required', 'in:immediate,longterm'],
         ]);
 
-        auth()->user()->tasks()->create($validated);
+        auth()->user()->tasks()->create([
+            ...$validated,
+            'expires_at' => now()->addDays(7),
+        ]);
 
         return redirect()->route('tasks.index');
     }
 
-    public function archive(Task $task): JsonResponse
+    public function complete(Task $task): JsonResponse
     {
-        $task->update(['archived_at' => now()]);
+        $task->markComplete();
 
-        return response()->json(['success' => true]);
+        $flowers = GardenFlower::spawnForUser(auth()->user(), $task);
+
+        return response()->json([
+            'success' => true,
+            'flowers' => collect($flowers)->map(fn (GardenFlower $f) => [
+                'id' => $f->id,
+                'emoji' => $f->emoji,
+                'position_x' => $f->position_x,
+            ])->values(),
+        ]);
     }
 
-    public function archiveIndex(): View
+    public function refreshExpiry(Task $task): JsonResponse
     {
-        $archivedTasks = auth()->user()->tasks()->archived()->latest('archived_at')->get();
+        $task->refreshExpiry();
 
-        return view('tasks.archive', compact('archivedTasks'));
+        return response()->json([
+            'success' => true,
+            'expires_at' => $task->expires_at->toIso8601String(),
+            'days_remaining' => $task->daysRemaining(),
+        ]);
+    }
+
+    public function completeIndex(): View
+    {
+        $completedTasks = auth()->user()->tasks()->completed()->latest('archived_at')->get();
+
+        return view('tasks.complete', compact('completedTasks'));
     }
 }

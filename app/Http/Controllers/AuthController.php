@@ -22,7 +22,7 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::attempt($credentials, remember: true)) {
             $request->session()->regenerate();
 
             return redirect()->intended(route('tasks.index'));
@@ -48,7 +48,7 @@ class AuthController extends Controller
 
         $user = User::create($validated);
 
-        Auth::login($user);
+        Auth::login($user, remember: true);
 
         return redirect()->route('tasks.index');
     }

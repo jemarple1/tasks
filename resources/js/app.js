@@ -1,4 +1,4 @@
-const SWIPE_THRESHOLD = 80;
+const SWIPE_THRESHOLD = 72;
 
 function initTabs() {
     const tabs = document.querySelectorAll('[data-tab]');
@@ -10,8 +10,10 @@ function initTabs() {
             const target = tab.dataset.tab;
 
             tabs.forEach((t) => {
-                t.classList.toggle('text-sky-deep', t.dataset.tab === target);
-                t.classList.toggle('text-sky-muted', t.dataset.tab !== target);
+                const active = t.dataset.tab === target;
+                t.classList.toggle('text-garden-text', active);
+                t.classList.toggle('font-semibold', active);
+                t.classList.toggle('text-garden-muted', !active);
             });
 
             panels.forEach((panel) => {
@@ -35,22 +37,51 @@ function initModal() {
 
     const open = () => {
         backdrop.classList.add('open');
-        backdrop.querySelector('input[name="title"]')?.focus();
+        document.body.classList.add('modal-open');
+        setTimeout(() => {
+            backdrop.querySelector('input[name="title"]')?.focus();
+        }, 100);
     };
 
     const close = () => {
         backdrop.classList.remove('open');
+        document.body.classList.remove('modal-open');
         form?.reset();
     };
 
-    openBtn.addEventListener('click', open);
-    closeBtn?.addEventListener('click', close);
+    openBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        open();
+    });
+
+    closeBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        close();
+    });
+
     backdrop.addEventListener('click', (e) => {
         if (e.target === backdrop) close();
     });
 }
 
-function initSwipeToArchive() {
+function plantFlowers(flowers) {
+    const bed = document.getElementById('garden-bed');
+    if (!bed || !flowers?.length) return;
+
+    flowers.forEach((flower, index) => {
+        const el = document.createElement('span');
+        el.className = 'garden-flower raining';
+        el.textContent = flower.emoji;
+        el.style.left = `${flower.position_x}%`;
+        el.dataset.flowerId = flower.id;
+        el.style.animationDelay = `${index * 0.08}s`;
+        bed.appendChild(el);
+
+        setTimeout(() => el.classList.remove('raining'), 1000 + index * 80);
+    });
+}
+
+function initSwipeActions() {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
 
     document.querySelectorAll('[data-task]').forEach((wrapper) => {
@@ -61,6 +92,11 @@ function initSwipeToArchive() {
         let currentX = 0;
         let dragging = false;
 
+        const reset = () => {
+            content.style.transform = '';
+            content.classList.remove('swiping', 'animating-out');
+        };
+
         const onStart = (x) => {
             startX = x;
             currentX = 0;
@@ -70,8 +106,9 @@ function initSwipeToArchive() {
 
         const onMove = (x) => {
             if (!dragging) return;
-            currentX = Math.min(0, x - startX);
-            content.style.transform = `translateX(${currentX}px)`;
+            currentX = x - startX;
+            const clamped = Math.max(-140, Math.min(140, currentX));
+            content.style.transform = `translateX(${clamped}px)`;
         };
 
         const onEnd = async () => {
@@ -79,29 +116,50 @@ function initSwipeToArchive() {
             dragging = false;
             content.classList.remove('swiping');
 
-            if (Math.abs(currentX) >= SWIPE_THRESHOLD) {
-                content.classList.add('archiving');
-                content.style.transform = 'translateX(-100%)';
+            if (currentX <= -SWIPE_THRESHOLD) {
+                content.classList.add('animating-out');
+                content.style.transform = 'translateX(-110%)';
                 content.style.opacity = '0';
 
-                const url = wrapper.dataset.archiveUrl;
                 try {
-                    await fetch(url, {
+                    const response = await fetch(wrapper.dataset.completeUrl, {
                         method: 'PATCH',
                         headers: {
                             'X-CSRF-TOKEN': csrf,
                             Accept: 'application/json',
                         },
                     });
+                    const data = await response.json();
+                    plantFlowers(data.flowers);
                     setTimeout(() => wrapper.remove(), 250);
                 } catch {
-                    content.style.transform = '';
                     content.style.opacity = '';
-                    content.classList.remove('archiving');
+                    reset();
                 }
-            } else {
-                content.style.transform = '';
+                return;
             }
+
+            if (currentX >= SWIPE_THRESHOLD) {
+                try {
+                    const response = await fetch(wrapper.dataset.refreshUrl, {
+                        method: 'PATCH',
+                        headers: {
+                            'X-CSRF-TOKEN': csrf,
+                            Accept: 'application/json',
+                        },
+                    });
+                    const data = await response.json();
+                    const expiryEl = wrapper.querySelector('[data-expiry]');
+                    if (expiryEl && data.days_remaining !== undefined) {
+                        expiryEl.textContent = `${data.days_remaining}d left`;
+                        expiryEl.classList.add('expiry-refreshed');
+                    }
+                } catch {
+                    //
+                }
+            }
+
+            reset();
         };
 
         content.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX), { passive: true });
@@ -109,11 +167,10 @@ function initSwipeToArchive() {
         content.addEventListener('touchend', onEnd);
 
         content.addEventListener('mousedown', (e) => onStart(e.clientX));
-        content.addEventListener('mousemove', (e) => {
+        document.addEventListener('mousemove', (e) => {
             if (dragging) onMove(e.clientX);
         });
-        content.addEventListener('mouseup', onEnd);
-        content.addEventListener('mouseleave', () => {
+        document.addEventListener('mouseup', () => {
             if (dragging) onEnd();
         });
     });
@@ -122,5 +179,5 @@ function initSwipeToArchive() {
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     initModal();
-    initSwipeToArchive();
+    initSwipeActions();
 });

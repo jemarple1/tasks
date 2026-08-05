@@ -1,13 +1,13 @@
 {
-    "name": "Sky Ledger",
-    "short_name": "Sky Ledger",
-    "description": "Your personal task ledger",
+    "name": "Task Garden",
+    "short_name": "Task Garden",
+    "description": "Your personal task garden",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
     "orientation": "portrait",
-    "background_color": "#e8f4fc",
-    "theme_color": "#e8f4fc",
+    "background_color": "#b8dff5",
+    "theme_color": "#b8dff5",
     "icons": [
         {
             "src": "/apple-touch-icon.png",

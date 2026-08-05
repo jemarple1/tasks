@@ -14,7 +14,8 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/', [TaskController::class, 'index'])->name('tasks.index');
     Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
-    Route::patch('/tasks/{task}/archive', [TaskController::class, 'archive'])->name('tasks.archive');
-    Route::get('/archive', [TaskController::class, 'archiveIndex'])->name('tasks.archive.index');
+    Route::patch('/tasks/{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete');
+    Route::patch('/tasks/{task}/refresh', [TaskController::class, 'refreshExpiry'])->name('tasks.refresh');
+    Route::get('/complete', [TaskController::class, 'completeIndex'])->name('tasks.complete.index');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

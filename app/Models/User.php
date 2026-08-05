@@ -23,6 +23,11 @@ class User extends Authenticatable
         return $this->hasMany(Task::class);
     }
 
+    public function gardenFlowers(): HasMany
+    {
+        return $this->hasMany(GardenFlower::class);
+    }
+
     protected function casts(): array
     {
         return [
