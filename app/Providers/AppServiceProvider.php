@@ -19,9 +19,12 @@ class AppServiceProvider extends ServiceProvider
             $view->with('weather', app(WeatherService::class)->current());
 
             if (auth()->check()) {
-                auth()->user()->gardenFlowers()->where('expires_at', '<=', now())->delete();
-
-                $view->with('flowers', auth()->user()->gardenFlowers()->active()->get());
+                $user = auth()->user();
+                $view->with([
+                    'treeEmoji' => $user->tree_emoji ?? '🌳',
+                    'treeSize' => $user->treeFontSize(),
+                    'unreadNotifications' => $user->unreadNotifications()->count(),
+                ]);
             }
         });
     }

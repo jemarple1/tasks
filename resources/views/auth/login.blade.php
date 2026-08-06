@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Sign in — Task Garden')
+@section('title', 'Sign in — Tend')
 
 @section('content')
     <div class="flex flex-1 flex-col justify-center py-8">
         <div class="mb-10 text-center">
             <span class="text-6xl" role="img" aria-label="{{ $weather['label'] ?? 'Weather' }}">{{ $weather['emoji'] ?? '🌤' }}</span>
-            <h1 class="mt-5 font-serif text-3xl font-bold italic text-garden-text">Welcome back</h1>
-            <p class="mt-2 font-sans text-lg text-garden-muted">Sign in to your garden</p>
+            <h1 class="mt-5 font-title text-3xl font-bold text-garden-text">Welcome back</h1>
+            <p class="mt-2 font-sans text-lg text-garden-muted">Sign in to Tend</p>
         </div>
 
         <form action="{{ route('login') }}" method="POST" class="space-y-5">

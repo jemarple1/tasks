@@ -9,18 +9,15 @@ function initTabs() {
     tabs.forEach((tab) => {
         tab.addEventListener('click', () => {
             const target = tab.dataset.tab;
-
             tabs.forEach((t) => {
                 const active = t.dataset.tab === target;
                 t.classList.toggle('text-garden-text', active);
                 t.classList.toggle('font-semibold', active);
                 t.classList.toggle('text-garden-muted', !active);
             });
-
             panels.forEach((panel) => {
                 panel.classList.toggle('hidden', panel.dataset.panel !== target);
             });
-
             if (indicator) {
                 indicator.style.transform = target === 'longterm' ? 'translateX(100%)' : 'translateX(0)';
             }
@@ -38,6 +35,9 @@ function initTaskModal() {
     const submitBtn = document.getElementById('task-form-submit');
     const titleInput = document.getElementById('task-title');
     const notesInput = document.getElementById('task-notes');
+    const recurrenceSelect = document.getElementById('task-recurrence');
+    const recurrenceUntil = document.getElementById('task-recurrence-until');
+    const assigneeField = document.getElementById('assignee-field');
 
     if (!backdrop || !openBtn || !form) return;
 
@@ -63,8 +63,12 @@ function initTaskModal() {
         methodInput.value = '';
         methodInput.disabled = true;
         modalTitle.textContent = 'New task';
-        submitBtn.textContent = 'Plant task';
+        submitBtn.textContent = 'Save task';
         setCategory('immediate');
+        if (recurrenceSelect) recurrenceSelect.value = 'none';
+        if (recurrenceUntil) recurrenceUntil.value = '';
+        if (assigneeField) assigneeField.classList.remove('hidden');
+        if (document.getElementById('recurrence-field')) document.getElementById('recurrence-field').classList.remove('hidden');
     };
 
     const openAdd = () => {
@@ -81,6 +85,10 @@ function initTaskModal() {
         titleInput.value = wrapper.dataset.taskTitle || '';
         notesInput.value = wrapper.dataset.taskNotes || '';
         setCategory(wrapper.dataset.taskCategory || 'immediate');
+        if (recurrenceSelect) recurrenceSelect.value = wrapper.dataset.taskRecurrence || 'none';
+        if (recurrenceUntil) recurrenceUntil.value = wrapper.dataset.taskRecurrenceUntil || '';
+        if (assigneeField) assigneeField.classList.add('hidden');
+        if (document.getElementById('recurrence-field')) document.getElementById('recurrence-field').classList.remove('hidden');
         open();
     };
 
@@ -101,21 +109,12 @@ function initTaskModal() {
     window.openTaskEdit = openEdit;
 }
 
-function plantFlowers(flowers) {
-    const bed = document.getElementById('garden-bed');
-    if (!bed || !flowers?.length) return;
-
-    flowers.forEach((flower, index) => {
-        const el = document.createElement('span');
-        el.className = 'garden-flower raining';
-        el.textContent = flower.emoji;
-        el.style.left = `${flower.position_x}%`;
-        el.dataset.flowerId = flower.id;
-        el.style.animationDelay = `${index * 0.08}s`;
-        bed.appendChild(el);
-
-        setTimeout(() => el.classList.remove('raining'), 1000 + index * 80);
-    });
+function growTree(size) {
+    const tree = document.getElementById('garden-tree');
+    if (!tree || !size) return;
+    tree.style.fontSize = size;
+    tree.classList.add('growing');
+    setTimeout(() => tree.classList.remove('growing'), 500);
 }
 
 function initSwipeActions() {
@@ -151,8 +150,7 @@ function initSwipeActions() {
             if (Math.abs(currentX) > TAP_MOVE_THRESHOLD || Math.abs(y - startY) > TAP_MOVE_THRESHOLD) {
                 moved = true;
             }
-            const clamped = Math.max(-140, Math.min(140, currentX));
-            content.style.transform = `translateX(${clamped}px)`;
+            content.style.transform = `translateX(${Math.max(-140, Math.min(140, currentX))}px)`;
         };
 
         const onEnd = async () => {
@@ -174,13 +172,10 @@ function initSwipeActions() {
                 try {
                     const response = await fetch(wrapper.dataset.completeUrl, {
                         method: 'PATCH',
-                        headers: {
-                            'X-CSRF-TOKEN': csrf,
-                            Accept: 'application/json',
-                        },
+                        headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
                     });
                     const data = await response.json();
-                    plantFlowers(data.flowers);
+                    growTree(data.tree_size);
                     setTimeout(() => wrapper.remove(), 250);
                 } catch {
                     content.style.opacity = '';
@@ -193,10 +188,7 @@ function initSwipeActions() {
                 try {
                     const response = await fetch(wrapper.dataset.refreshUrl, {
                         method: 'PATCH',
-                        headers: {
-                            'X-CSRF-TOKEN': csrf,
-                            Accept: 'application/json',
-                        },
+                        headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
                     });
                     const data = await response.json();
                     const expiryEl = wrapper.querySelector('[data-expiry]');
@@ -215,14 +207,9 @@ function initSwipeActions() {
         content.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
         content.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
         content.addEventListener('touchend', onEnd);
-
         content.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
-        document.addEventListener('mousemove', (e) => {
-            if (dragging) onMove(e.clientX, e.clientY);
-        });
-        document.addEventListener('mouseup', () => {
-            if (dragging) onEnd();
-        });
+        document.addEventListener('mousemove', (e) => { if (dragging) onMove(e.clientX, e.clientY); });
+        document.addEventListener('mouseup', () => { if (dragging) onEnd(); });
     });
 }
 

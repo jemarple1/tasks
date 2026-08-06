@@ -1,7 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\ConnectionController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\WeatherController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -18,5 +23,20 @@ Route::middleware('auth')->group(function () {
     Route::patch('/tasks/{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete');
     Route::patch('/tasks/{task}/refresh', [TaskController::class, 'refreshExpiry'])->name('tasks.refresh');
     Route::get('/complete', [TaskController::class, 'completeIndex'])->name('tasks.complete.index');
+
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
+    Route::post('/calendar', [CalendarController::class, 'store'])->name('calendar.store');
+    Route::delete('/calendar/{event}', [CalendarController::class, 'destroy'])->name('calendar.destroy');
+
+    Route::get('/weather', [WeatherController::class, 'index'])->name('weather.index');
+
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::post('/connections', [ConnectionController::class, 'store'])->name('connections.store');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

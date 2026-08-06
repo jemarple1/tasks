@@ -1,0 +1,175 @@
+@extends('layouts.app')
+
+@section('title', 'Calendar — Tend')
+@section('content-class', 'calendar-layout pb-safe')
+
+@section('content')
+@php
+    $params = fn ($d, $v = null, $s = null) => route('calendar.index', $calendarParams($d, $v ?? $view) + ['scope' => $s ?? $scope]);
+    $prevDate = match($view) {
+        'week' => $date->copy()->subWeek(),
+        'day' => $date->copy()->subDay(),
+        default => $date->copy()->subMonth(),
+    };
+    $nextDate = match($view) {
+        'week' => $date->copy()->addWeek(),
+        'day' => $date->copy()->addDay(),
+        default => $date->copy()->addMonth(),
+    };
+@endphp
+
+<div class="calendar-page">
+    <header class="mb-3 flex shrink-0 items-center justify-between pt-1">
+        <div class="flex items-center gap-2">
+            <a href="{{ route('tasks.index') }}" class="nav-btn" aria-label="Back">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            </a>
+            <h1 class="font-title text-xl font-bold text-garden-text">{{ $label }}</h1>
+        </div>
+        <div class="flex gap-1">
+            <a href="{{ $params($prevDate) }}" class="nav-btn text-sm">‹</a>
+            <a href="{{ $params($nextDate) }}" class="nav-btn text-sm">›</a>
+        </div>
+    </header>
+
+    <div class="calendar-toggle mb-2">
+        <a href="{{ $params($date, null, 'personal') }}" class="{{ $scope === 'personal' ? 'active' : '' }}">Personal</a>
+        <a href="{{ $params($date, null, 'shared') }}" class="{{ $scope === 'shared' ? 'active' : '' }}">Shared</a>
+    </div>
+
+    <div class="calendar-toggle mb-3">
+        <a href="{{ $params($date, 'month') }}" class="{{ $view === 'month' ? 'active' : '' }}">Month</a>
+        <a href="{{ $params($date, 'week') }}" class="{{ $view === 'week' ? 'active' : '' }}">Week</a>
+        <a href="{{ $params($date, 'day') }}" class="{{ $view === 'day' ? 'active' : '' }}">Day</a>
+    </div>
+
+    @if ($view === 'month')
+        <div class="mb-1 grid grid-cols-7 gap-0.5 text-center font-sans text-[10px] font-bold uppercase tracking-wide text-garden-muted">
+            @foreach (['S','M','T','W','T','F','S'] as $d)<div>{{ $d }}</div>@endforeach
+        </div>
+        <div class="calendar-grid-month mb-3">
+            @php $day = $rangeStart->copy(); @endphp
+            @while ($day <= $rangeEnd)
+                @php
+                    $key = $day->toDateString();
+                    $dayOcc = $occurrences->get($key, collect());
+                @endphp
+                <a href="{{ $params($day, 'day') }}" class="calendar-day-cell {{ !$day->isSameMonth($date) ? 'other-month' : '' }} {{ $day->isToday() ? 'is-today' : '' }}">
+                    <span class="text-right font-sans text-xs font-semibold">{{ $day->day }}</span>
+                    <div class="min-h-0 flex-1 overflow-hidden">
+                        @foreach ($dayOcc->take(4) as $occ)
+                            @php $ev = $occ['source']; @endphp
+                            <div class="calendar-event-pill {{ $ev->user_id === auth()->id() ? 'bg-blue-100 text-blue-900' : 'bg-amber-100 text-amber-900' }}">
+                                {{ $ev->title }}
+                            </div>
+                        @endforeach
+                    </div>
+                </a>
+                @php $day->addDay(); @endphp
+            @endwhile
+        </div>
+    @elseif ($view === 'week')
+        <div class="calendar-grid-week mb-3">
+            @php $day = $rangeStart->copy(); @endphp
+            @while ($day <= $rangeEnd)
+                @php $key = $day->toDateString(); $dayOcc = $occurrences->get($key, collect()); @endphp
+                <a href="{{ $params($day, 'day') }}" class="calendar-week-cell {{ $day->isToday() ? 'is-today' : '' }}">
+                    <span class="font-sans text-xs font-bold uppercase text-garden-muted">{{ $day->format('D') }}</span>
+                    <span class="font-title text-lg font-bold">{{ $day->day }}</span>
+                    <div class="mt-1 min-h-0 flex-1 space-y-1 overflow-y-auto">
+                        @forelse ($dayOcc as $occ)
+                            @php $ev = $occ['source']; @endphp
+                            <div class="calendar-event-pill {{ $ev->user_id === auth()->id() ? 'bg-blue-100 text-blue-900' : 'bg-amber-100 text-amber-900' }}">
+                                {{ $occ['occurrence_at']->format('g:i') }} {{ $ev->title }}
+                            </div>
+                        @empty
+                            <span class="font-sans text-[10px] text-garden-muted/60">—</span>
+                        @endforelse
+                    </div>
+                </a>
+                @php $day->addDay(); @endphp
+            @endwhile
+        </div>
+    @else
+        <div class="calendar-day-view mb-3">
+            @php $key = $date->toDateString(); $dayOcc = $occurrences->get($key, collect()); @endphp
+            @forelse ($dayOcc as $occ)
+                @php
+                    $ev = $occ['source'];
+                    $isMine = $ev->user_id === auth()->id();
+                    $isTagged = $ev->taggedUsers->contains('id', auth()->id());
+                @endphp
+                <div class="calendar-event-block">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0 flex-1">
+                            <p class="font-title text-lg font-bold text-garden-text">{{ $ev->title }}</p>
+                            <p class="font-sans text-sm text-garden-muted">
+                                {{ $occ['occurrence_at']->format('g:i A') }}
+                                @if($ev->recurrence !== 'none') · ↻ {{ $ev->recurrence }} @endif
+                            </p>
+                            @if (!$isMine)
+                                <p class="mt-0.5 font-sans text-xs text-amber-700">{{ '@'.$ev->user->username }}</p>
+                            @endif
+                            @if ($isTagged && !$isMine)
+                                <p class="mt-0.5 font-sans text-xs font-medium text-garden-accent">Tagged you</p>
+                            @endif
+                            @if ($ev->taggedUsers->isNotEmpty() && $isMine)
+                                <p class="mt-0.5 font-sans text-xs text-garden-muted">
+                                    Tagged: {{ $ev->taggedUsers->map(fn ($u) => '@'.$u->username)->join(', ') }}
+                                </p>
+                            @endif
+                        </div>
+                        @if ($isMine)
+                            <form action="{{ route('calendar.destroy', $ev) }}" method="POST">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="font-sans text-xs text-red-600">Remove</button>
+                            </form>
+                        @endif
+                    </div>
+                    @if ($ev->notes)
+                        <p class="mt-2 font-sans text-sm text-garden-muted">{{ $ev->notes }}</p>
+                    @endif
+                </div>
+            @empty
+                <div class="flex flex-1 items-center justify-center py-12">
+                    <p class="font-sans text-base text-garden-muted">No events this day</p>
+                </div>
+            @endforelse
+        </div>
+    @endif
+
+    @if ($scope === 'personal')
+        <details class="shrink-0 rounded-xl border-2 border-white/70 bg-white/80">
+            <summary class="cursor-pointer px-4 py-3 font-title text-base font-bold text-garden-text">Add event</summary>
+            <form action="{{ route('calendar.store') }}" method="POST" class="space-y-3 border-t border-slate-200 px-4 py-4">
+                @csrf
+                <input type="text" name="title" placeholder="Event title" required class="input-field w-full rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
+                <input type="datetime-local" name="starts_at" required value="{{ $date->format('Y-m-d\TH:i') }}" class="input-field w-full rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
+                <input type="datetime-local" name="ends_at" class="input-field w-full rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
+                <select name="recurrence" class="input-field w-full rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
+                    <option value="none">Does not repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+                <input type="date" name="recurrence_until" placeholder="Repeat until" class="input-field w-full rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
+                @if ($connections->isNotEmpty())
+                    <div>
+                        <p class="mb-2 font-sans text-sm font-semibold text-garden-muted">Tag people</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($connections as $person)
+                                <label class="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-sans text-sm">
+                                    <input type="checkbox" name="tagged_usernames[]" value="{{ $person->username }}" class="rounded">
+                                    {{ '@'.$person->username }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+                <textarea name="notes" rows="2" placeholder="Notes" class="input-field w-full resize-none rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent"></textarea>
+                <button type="submit" class="w-full rounded-xl bg-garden-accent py-3 font-sans font-semibold text-white">Save event</button>
+            </form>
+        </details>
+    @endif
+</div>
+@endsection

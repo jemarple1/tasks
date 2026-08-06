@@ -1,7 +1,7 @@
 {
-    "name": "Task Garden",
-    "short_name": "Task Garden",
-    "description": "Your personal task garden",
+    "name": "Tend",
+    "short_name": "Tend",
+    "description": "Tend tasks together",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
@@ -11,13 +11,13 @@
     "icons": [
         {
             "src": "/apple-touch-icon.png",
-            "sizes": "180x180",
+            "sizes": "1024x1024",
             "type": "image/png",
             "purpose": "any"
         },
         {
             "src": "/apple-touch-icon.png",
-            "sizes": "180x180",
+            "sizes": "1024x1024",
             "type": "image/png",
             "purpose": "maskable"
         }
