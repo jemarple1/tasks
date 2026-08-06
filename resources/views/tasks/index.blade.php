@@ -3,12 +3,12 @@
 @section('title', 'Tend')
 
 @section('content')
-    <header class="flex items-center justify-between pb-4 pt-2">
+    <header class="flex items-center justify-between pb-3 pt-2">
         <div class="flex items-center gap-2">
             <a href="{{ route('weather.index') }}" class="flex items-center gap-2 rounded-full border-2 border-white/60 bg-white/70 px-2.5 py-1 shadow-sm transition active:scale-95" aria-label="Weather forecast">
-                <span class="text-4xl" role="img" aria-hidden="true">{{ $weather['emoji'] ?? '🌤' }}</span>
+                <span class="text-3xl" role="img" aria-hidden="true">{{ $weather['emoji'] ?? '🌤' }}</span>
                 @if(isset($weather['temperature']))
-                    <span class="font-sans text-lg font-medium text-garden-text">{{ $weather['temperature'] }}°</span>
+                    <span class="font-sans text-base font-medium text-garden-text">{{ $weather['temperature'] }}°</span>
                 @endif
             </a>
         </div>
@@ -31,46 +31,38 @@
         </div>
     </header>
 
-    <div class="relative mb-4 rounded-2xl border-2 border-white/70 bg-white/70 p-1 shadow-sm backdrop-blur-sm">
-        <div data-tab-indicator class="tab-indicator absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-xl bg-white shadow-md"></div>
-        <div class="relative grid grid-cols-2 gap-1">
-            <button type="button" data-tab="immediate" class="relative z-10 rounded-xl py-2.5 font-sans text-base font-semibold text-garden-text transition">
-                <span class="font-title font-semibold">Immediate</span>
-                <span class="ml-1 text-sm text-garden-accent">({{ $immediateTasks->count() }})</span>
-            </button>
-            <button type="button" data-tab="longterm" class="relative z-10 rounded-xl py-2.5 font-sans text-base text-garden-muted transition">
-                <span class="font-title font-semibold">Long-term</span>
-                <span class="ml-1 text-sm">({{ $longtermTasks->count() }})</span>
-            </button>
-        </div>
+    <div class="category-filter mb-3">
+        <a href="{{ route('tasks.index') }}" class="category-pill {{ !$activeCategory ? 'active' : '' }}">All</a>
+        @foreach ($categories as $category)
+            <a
+                href="{{ route('tasks.index', ['category' => $category->id]) }}"
+                class="category-pill {{ (string) $activeCategory === (string) $category->id ? 'active' : '' }}"
+                style="--cat-color: {{ $category->color }}"
+            >
+                <span class="category-dot" style="background: {{ $category->color }}"></span>
+                {{ $category->name }}
+            </a>
+        @endforeach
     </div>
 
-    <div data-panel="immediate" class="flex flex-1 flex-col gap-2">
-        @forelse ($immediateTasks as $task)
+    <button id="fab-add" type="button" class="add-task-link mb-4" aria-label="Add task">
+        Add a task <span aria-hidden="true">+</span>
+    </button>
+
+    <div class="task-list flex flex-1 flex-col gap-3">
+        @forelse ($tasks as $task)
             @include('tasks.partials.task-item', ['task' => $task])
         @empty
-            <div class="py-12 text-center">
-                <p class="font-title text-xl text-garden-text">Nothing urgent</p>
-                <p class="mt-1 font-sans text-base text-garden-muted">Tap + to tend a task</p>
+            <div class="py-16 text-center">
+                <p class="font-title text-2xl font-semibold text-garden-text">Nothing here yet</p>
+                <p class="mt-2 font-sans text-base text-garden-muted">Add a task to get started</p>
             </div>
         @endforelse
     </div>
 
-    <div data-panel="longterm" class="hidden flex-1 flex-col gap-2">
-        @forelse ($longtermTasks as $task)
-            @include('tasks.partials.task-item', ['task' => $task])
-        @empty
-            <div class="py-12 text-center">
-                <p class="font-title text-xl text-garden-text">No long-term goals</p>
-            </div>
-        @endforelse
-    </div>
-
-    <p class="mt-3 text-center font-sans text-xs text-garden-muted">
-        Tap to edit · Swipe left complete · Swipe right +7d
+    <p class="mt-4 text-center font-sans text-xs text-garden-muted">
+        Tap circle to complete · Tap task to edit · Swipe left to remind tomorrow
     </p>
-
-    <button id="fab-add" type="button" class="fab fixed z-40 flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/50 bg-garden-accent text-2xl font-light text-white transition active:scale-[0.94]" aria-label="Add task">+</button>
 @endsection
 
 @push('modals')
@@ -83,6 +75,9 @@
             <form id="task-form" action="{{ route('tasks.store') }}" method="POST" class="flex flex-1 flex-col overflow-y-auto px-5 py-5">
                 @csrf
                 <input type="hidden" id="task-form-method" name="_method" value="" disabled>
+                @if($activeCategory)
+                    <input type="hidden" name="filter_category" value="{{ $activeCategory }}">
+                @endif
                 <div class="mb-4">
                     <label for="task-title" class="mb-1.5 block font-sans text-sm font-semibold uppercase tracking-wide text-garden-muted">Title</label>
                     <input id="task-title" type="text" name="title" required maxlength="255" autocomplete="off" class="input-field w-full rounded-xl border-2 border-slate-300 bg-slate-50 px-4 py-3 text-garden-text outline-none focus:border-garden-accent focus:ring-4 focus:ring-garden-accent/20">
@@ -100,6 +95,14 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="mb-4">
+                    <label for="task-category-id" class="mb-1.5 block font-sans text-sm font-semibold uppercase tracking-wide text-garden-muted">Category</label>
+                    <select id="task-category-id" name="task_category_id" required class="input-field w-full rounded-xl border-2 border-slate-300 bg-slate-50 px-4 py-3 text-garden-text outline-none focus:border-garden-accent">
+                        @foreach ($categories as $category)
+                            <option value="{{ $category->id }}" @selected((string) $activeCategory === (string) $category->id)>{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="mb-4" id="recurrence-field">
                     <p class="mb-2 font-sans text-sm font-semibold uppercase tracking-wide text-garden-muted">Repeat</p>
                     <select id="task-recurrence" name="recurrence" class="input-field mb-2 w-full rounded-xl border-2 border-slate-300 bg-slate-50 px-4 py-3 text-garden-text outline-none focus:border-garden-accent">
@@ -109,13 +112,6 @@
                         <option value="monthly">Monthly</option>
                     </select>
                     <input type="date" id="task-recurrence-until" name="recurrence_until" class="input-field w-full rounded-xl border-2 border-slate-300 bg-slate-50 px-4 py-3 text-garden-text outline-none focus:border-garden-accent" placeholder="Repeat until">
-                </div>
-                <div class="mb-6">
-                    <p class="mb-2 font-sans text-sm font-semibold uppercase tracking-wide text-garden-muted">Category</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="cursor-pointer"><input type="radio" name="category" value="immediate" class="peer sr-only" checked><span class="flex items-center justify-center rounded-xl border-2 border-slate-200 bg-slate-50 py-3 font-title text-base peer-checked:border-garden-accent peer-checked:bg-blue-50 peer-checked:font-semibold peer-checked:text-garden-accent">Immediate</span></label>
-                        <label class="cursor-pointer"><input type="radio" name="category" value="longterm" class="peer sr-only"><span class="flex items-center justify-center rounded-xl border-2 border-slate-200 bg-slate-50 py-3 font-title text-base peer-checked:border-garden-accent peer-checked:bg-blue-50 peer-checked:font-semibold peer-checked:text-garden-accent">Long-term</span></label>
-                    </div>
                 </div>
                 <button id="task-form-submit" type="submit" class="mt-auto w-full rounded-xl bg-garden-accent py-3.5 font-sans text-lg font-semibold text-white shadow-lg">Save task</button>
             </form>

@@ -18,6 +18,7 @@ class Task extends Model
         'title',
         'notes',
         'category',
+        'task_category_id',
         'archived_at',
         'expires_at',
         'recurrence',
@@ -42,6 +43,11 @@ class Task extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function taskCategory(): BelongsTo
+    {
+        return $this->belongsTo(TaskCategory::class);
     }
 
     public function recurrenceParent(): BelongsTo
@@ -85,6 +91,11 @@ class Task extends Model
         $this->update(['expires_at' => now()->addDays(7)]);
     }
 
+    public function snoozeOneDay(): void
+    {
+        $this->update(['expires_at' => now()->addDay()]);
+    }
+
     public function markComplete(): void
     {
         $recurrence = $this->recurrence;
@@ -112,6 +123,7 @@ class Task extends Model
             'notes' => $this->notes,
             'category' => $this->category,
             'expires_at' => $nextExpiry,
+            'task_category_id' => $this->task_category_id,
             'recurrence' => $recurrence,
             'recurrence_until' => $recurrenceUntil,
             'recurrence_parent_id' => $this->recurrence_parent_id ?? $this->id,

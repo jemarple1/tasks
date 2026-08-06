@@ -13,6 +13,7 @@ class SettingsController extends Controller
     {
         return view('settings.index', [
             'connections' => auth()->user()->connectedUsers(),
+            'categories' => auth()->user()->taskCategories,
             'treeOptions' => User::TREE_OPTIONS,
         ]);
     }

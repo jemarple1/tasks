@@ -39,6 +39,47 @@
         <button type="submit" class="w-full rounded-xl bg-garden-accent py-3.5 font-sans text-lg font-semibold text-white">Save settings</button>
     </form>
 
+    <section class="mb-8">
+        <h2 class="mb-3 font-title text-xl font-semibold text-garden-text">Categories</h2>
+
+        @if ($categories->isNotEmpty())
+            <ul class="mb-4 space-y-2">
+                @foreach ($categories as $category)
+                    <li class="flex items-center justify-between rounded-xl border-2 border-white/70 bg-white/80 px-4 py-2.5">
+                        <span class="flex items-center gap-2 font-sans text-base">
+                            <span class="inline-block h-3 w-3 rounded-full" style="background: {{ $category->color }}"></span>
+                            {{ $category->name }}
+                        </span>
+                        @if ($categories->count() > 1)
+                            <form action="{{ route('categories.destroy', $category) }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="font-sans text-sm text-red-600">Remove</button>
+                            </form>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+
+        <form action="{{ route('categories.store') }}" method="POST" class="space-y-3">
+            @csrf
+            <input type="text" name="name" placeholder="Category name" required maxlength="30" class="input-field w-full rounded-xl border-2 border-white/70 bg-white/90 px-4 py-3 outline-none focus:border-garden-accent">
+            <div>
+                <p class="mb-2 font-sans text-sm font-semibold text-garden-muted">Color</p>
+                <div class="flex flex-wrap gap-2">
+                    @foreach (\App\Models\TaskCategory::COLOR_OPTIONS as $color)
+                        <label class="cursor-pointer">
+                            <input type="radio" name="color" value="{{ $color }}" class="peer sr-only" @checked($loop->first)>
+                            <span class="block h-9 w-9 rounded-full border-2 border-transparent peer-checked:border-garden-text peer-checked:ring-2 peer-checked:ring-white" style="background: {{ $color }}"></span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+            <button type="submit" class="w-full rounded-xl border-2 border-garden-accent bg-white py-3 font-sans font-semibold text-garden-accent">Add category</button>
+        </form>
+    </section>
+
     <section>
         <h2 class="mb-3 font-title text-xl font-semibold text-garden-text">Add someone</h2>
         <form action="{{ route('connections.store') }}" method="POST" class="flex gap-2">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\TaskCategory;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,6 +49,8 @@ class AuthController extends Controller
         ]);
 
         $user = User::create($validated);
+
+        TaskCategory::seedDefaultsFor($user);
 
         Auth::login($user, remember: true);
 

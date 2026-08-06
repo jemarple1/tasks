@@ -87,9 +87,9 @@ class CalendarController extends Controller
     {
         return match ($view) {
             'week' => [
-                $date->copy()->startOfWeek(),
-                $date->copy()->endOfWeek(),
-                'Week of '.$date->copy()->startOfWeek()->format('M j, Y'),
+                $date->copy()->startOfWeek(Carbon::SUNDAY),
+                $date->copy()->endOfWeek(Carbon::SATURDAY),
+                'Week of '.$date->copy()->startOfWeek(Carbon::SUNDAY)->format('M j, Y'),
             ],
             'day' => [
                 $date->copy()->startOfDay(),
@@ -97,8 +97,8 @@ class CalendarController extends Controller
                 $date->format('l, F j, Y'),
             ],
             default => [
-                $date->copy()->startOfMonth()->startOfWeek(),
-                $date->copy()->endOfMonth()->endOfWeek(),
+                $date->copy()->startOfMonth()->startOfWeek(Carbon::SUNDAY),
+                $date->copy()->endOfMonth()->endOfWeek(Carbon::SATURDAY),
                 $date->format('F Y'),
             ],
         };

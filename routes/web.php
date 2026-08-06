@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SettingsController;
@@ -21,6 +22,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
     Route::patch('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     Route::patch('/tasks/{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete');
+    Route::patch('/tasks/{task}/snooze', [TaskController::class, 'snooze'])->name('tasks.snooze');
     Route::patch('/tasks/{task}/refresh', [TaskController::class, 'refreshExpiry'])->name('tasks.refresh');
     Route::get('/complete', [TaskController::class, 'completeIndex'])->name('tasks.complete.index');
 
@@ -33,6 +35,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::post('/connections', [ConnectionController::class, 'store'])->name('connections.store');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');

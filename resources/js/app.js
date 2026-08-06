@@ -1,29 +1,4 @@
 const SWIPE_THRESHOLD = 72;
-const TAP_MOVE_THRESHOLD = 8;
-
-function initTabs() {
-    const tabs = document.querySelectorAll('[data-tab]');
-    const panels = document.querySelectorAll('[data-panel]');
-    const indicator = document.querySelector('[data-tab-indicator]');
-
-    tabs.forEach((tab) => {
-        tab.addEventListener('click', () => {
-            const target = tab.dataset.tab;
-            tabs.forEach((t) => {
-                const active = t.dataset.tab === target;
-                t.classList.toggle('text-garden-text', active);
-                t.classList.toggle('font-semibold', active);
-                t.classList.toggle('text-garden-muted', !active);
-            });
-            panels.forEach((panel) => {
-                panel.classList.toggle('hidden', panel.dataset.panel !== target);
-            });
-            if (indicator) {
-                indicator.style.transform = target === 'longterm' ? 'translateX(100%)' : 'translateX(0)';
-            }
-        });
-    });
-}
 
 function initTaskModal() {
     const backdrop = document.getElementById('task-modal');
@@ -35,6 +10,7 @@ function initTaskModal() {
     const submitBtn = document.getElementById('task-form-submit');
     const titleInput = document.getElementById('task-title');
     const notesInput = document.getElementById('task-notes');
+    const categorySelect = document.getElementById('task-category-id');
     const recurrenceSelect = document.getElementById('task-recurrence');
     const recurrenceUntil = document.getElementById('task-recurrence-until');
     const assigneeField = document.getElementById('assignee-field');
@@ -42,12 +18,6 @@ function initTaskModal() {
     if (!backdrop || !openBtn || !form) return;
 
     const storeUrl = form.action;
-
-    const setCategory = (category) => {
-        form.querySelectorAll('input[name="category"]').forEach((radio) => {
-            radio.checked = radio.value === category;
-        });
-    };
 
     const open = () => {
         backdrop.classList.add('open');
@@ -64,11 +34,9 @@ function initTaskModal() {
         methodInput.disabled = true;
         modalTitle.textContent = 'New task';
         submitBtn.textContent = 'Save task';
-        setCategory('immediate');
         if (recurrenceSelect) recurrenceSelect.value = 'none';
         if (recurrenceUntil) recurrenceUntil.value = '';
         if (assigneeField) assigneeField.classList.remove('hidden');
-        if (document.getElementById('recurrence-field')) document.getElementById('recurrence-field').classList.remove('hidden');
     };
 
     const openAdd = () => {
@@ -84,11 +52,10 @@ function initTaskModal() {
         submitBtn.textContent = 'Save changes';
         titleInput.value = wrapper.dataset.taskTitle || '';
         notesInput.value = wrapper.dataset.taskNotes || '';
-        setCategory(wrapper.dataset.taskCategory || 'immediate');
+        if (categorySelect) categorySelect.value = wrapper.dataset.taskCategoryId || '';
         if (recurrenceSelect) recurrenceSelect.value = wrapper.dataset.taskRecurrence || 'none';
         if (recurrenceUntil) recurrenceUntil.value = wrapper.dataset.taskRecurrenceUntil || '';
         if (assigneeField) assigneeField.classList.add('hidden');
-        if (document.getElementById('recurrence-field')) document.getElementById('recurrence-field').classList.remove('hidden');
         open();
     };
 
@@ -117,84 +84,81 @@ function growTree(size) {
     setTimeout(() => tree.classList.remove('growing'), 500);
 }
 
-function initSwipeActions() {
+function initTaskActions() {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
 
     document.querySelectorAll('[data-task]').forEach((wrapper) => {
-        const content = wrapper.querySelector('.task-swipe-content');
-        if (!content) return;
+        const card = wrapper.querySelector('.task-card');
+        const editBtn = wrapper.querySelector('.task-edit-area');
+        const completeBtn = wrapper.querySelector('.task-complete-btn');
+
+        if (!card || !editBtn || !completeBtn) return;
 
         let startX = 0;
         let startY = 0;
         let currentX = 0;
         let dragging = false;
-        let moved = false;
 
         const reset = () => {
-            content.style.transform = '';
-            content.classList.remove('swiping', 'animating-out');
+            card.style.transform = '';
+            card.classList.remove('swiping', 'animating-out');
         };
+
+        completeBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            card.classList.add('animating-out');
+            card.style.transform = 'translateX(110%)';
+            card.style.opacity = '0';
+
+            try {
+                const response = await fetch(wrapper.dataset.completeUrl, {
+                    method: 'PATCH',
+                    headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+                });
+                const data = await response.json();
+                growTree(data.tree_size);
+                setTimeout(() => wrapper.remove(), 250);
+            } catch {
+                card.style.opacity = '';
+                reset();
+            }
+        });
+
+        editBtn.addEventListener('click', () => {
+            window.openTaskEdit?.(wrapper);
+        });
 
         const onStart = (x, y) => {
             startX = x;
             startY = y;
             currentX = 0;
             dragging = true;
-            moved = false;
-            content.classList.add('swiping');
+            card.classList.add('swiping');
         };
 
         const onMove = (x, y) => {
             if (!dragging) return;
-            currentX = x - startX;
-            if (Math.abs(currentX) > TAP_MOVE_THRESHOLD || Math.abs(y - startY) > TAP_MOVE_THRESHOLD) {
-                moved = true;
-            }
-            content.style.transform = `translateX(${Math.max(-140, Math.min(140, currentX))}px)`;
+            if (Math.abs(y - startY) > Math.abs(x - startX)) return;
+            currentX = Math.min(0, x - startX);
+            card.style.transform = `translateX(${Math.max(-140, currentX)}px)`;
         };
 
         const onEnd = async () => {
             if (!dragging) return;
             dragging = false;
-            content.classList.remove('swiping');
-
-            if (!moved && Math.abs(currentX) < TAP_MOVE_THRESHOLD) {
-                reset();
-                window.openTaskEdit?.(wrapper);
-                return;
-            }
+            card.classList.remove('swiping');
 
             if (currentX <= -SWIPE_THRESHOLD) {
-                content.classList.add('animating-out');
-                content.style.transform = 'translateX(-110%)';
-                content.style.opacity = '0';
-
                 try {
-                    const response = await fetch(wrapper.dataset.completeUrl, {
+                    const response = await fetch(wrapper.dataset.snoozeUrl, {
                         method: 'PATCH',
                         headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
                     });
                     const data = await response.json();
-                    growTree(data.tree_size);
-                    setTimeout(() => wrapper.remove(), 250);
-                } catch {
-                    content.style.opacity = '';
-                    reset();
-                }
-                return;
-            }
-
-            if (currentX >= SWIPE_THRESHOLD) {
-                try {
-                    const response = await fetch(wrapper.dataset.refreshUrl, {
-                        method: 'PATCH',
-                        headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
-                    });
-                    const data = await response.json();
-                    const expiryEl = wrapper.querySelector('[data-expiry]');
-                    if (expiryEl && data.days_remaining !== undefined) {
-                        expiryEl.textContent = `${data.days_remaining}d`;
-                        expiryEl.classList.add('expiry-refreshed');
+                    const dateEl = wrapper.querySelector('.task-card-date');
+                    if (dateEl && data.due_label) {
+                        dateEl.textContent = data.due_label;
+                        dateEl.classList.add('expiry-refreshed');
                     }
                 } catch {
                     //
@@ -204,17 +168,19 @@ function initSwipeActions() {
             reset();
         };
 
-        content.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
-        content.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
-        content.addEventListener('touchend', onEnd);
-        content.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+        card.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+        card.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+        card.addEventListener('touchend', onEnd);
+        card.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.task-complete-btn')) return;
+            onStart(e.clientX, e.clientY);
+        });
         document.addEventListener('mousemove', (e) => { if (dragging) onMove(e.clientX, e.clientY); });
         document.addEventListener('mouseup', () => { if (dragging) onEnd(); });
     });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    initTabs();
     initTaskModal();
-    initSwipeActions();
+    initTaskActions();
 });

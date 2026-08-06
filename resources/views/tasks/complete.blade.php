@@ -18,7 +18,9 @@
             <div class="rounded-xl border-2 border-slate-200 bg-white/90 px-4 py-2.5 shadow-sm">
                 <p class="font-title text-base text-garden-muted line-through">{{ $task->title }}</p>
                 <div class="mt-1 flex flex-wrap items-center gap-2 font-sans text-sm text-garden-muted">
-                    <span class="rounded-full bg-slate-100 px-2 py-0.5 capitalize">{{ $task->category === 'longterm' ? 'Long-term' : 'Immediate' }}</span>
+                    @if ($task->taskCategory)
+                        <span class="font-semibold" style="color: {{ $task->taskCategory->color }}">{{ $task->taskCategory->name }}</span>
+                    @endif
                     @if ($task->isFromOtherUser())
                         <span class="text-amber-700">from {{ '@'.$task->creator->username }}</span>
                     @endif
