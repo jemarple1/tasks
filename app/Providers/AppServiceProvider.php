@@ -24,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
                     'treeEmoji' => $user->tree_emoji ?? '🌳',
                     'treeSize' => $user->treeFontSize(),
                     'unreadNotifications' => $user->unreadNotifications()->count(),
+                    'navCategories' => $user->taskCategories,
                 ]);
             }
         });

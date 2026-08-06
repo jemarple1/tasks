@@ -2,7 +2,7 @@ const SWIPE_THRESHOLD = 72;
 
 function initTaskModal() {
     const backdrop = document.getElementById('task-modal');
-    const openBtn = document.getElementById('fab-add');
+    const openBtns = [document.getElementById('nav-add-task'), document.getElementById('fab-add')].filter(Boolean);
     const closeBtn = document.getElementById('modal-close');
     const form = document.getElementById('task-form');
     const methodInput = document.getElementById('task-form-method');
@@ -10,12 +10,13 @@ function initTaskModal() {
     const submitBtn = document.getElementById('task-form-submit');
     const titleInput = document.getElementById('task-title');
     const notesInput = document.getElementById('task-notes');
+    const dueAtInput = document.getElementById('task-due-at');
     const categorySelect = document.getElementById('task-category-id');
     const recurrenceSelect = document.getElementById('task-recurrence');
     const recurrenceUntil = document.getElementById('task-recurrence-until');
     const assigneeField = document.getElementById('assignee-field');
 
-    if (!backdrop || !openBtn || !form) return;
+    if (!backdrop || !form || openBtns.length === 0) return;
 
     const storeUrl = form.action;
 
@@ -36,6 +37,7 @@ function initTaskModal() {
         submitBtn.textContent = 'Save task';
         if (recurrenceSelect) recurrenceSelect.value = 'none';
         if (recurrenceUntil) recurrenceUntil.value = '';
+        if (dueAtInput) dueAtInput.value = '';
         if (assigneeField) assigneeField.classList.remove('hidden');
     };
 
@@ -52,6 +54,7 @@ function initTaskModal() {
         submitBtn.textContent = 'Save changes';
         titleInput.value = wrapper.dataset.taskTitle || '';
         notesInput.value = wrapper.dataset.taskNotes || '';
+        if (dueAtInput) dueAtInput.value = wrapper.dataset.taskDueAt || '';
         if (categorySelect) categorySelect.value = wrapper.dataset.taskCategoryId || '';
         if (recurrenceSelect) recurrenceSelect.value = wrapper.dataset.taskRecurrence || 'none';
         if (recurrenceUntil) recurrenceUntil.value = wrapper.dataset.taskRecurrenceUntil || '';
@@ -59,9 +62,11 @@ function initTaskModal() {
         open();
     };
 
-    openBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        openAdd();
+    openBtns.forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openAdd();
+        });
     });
 
     closeBtn?.addEventListener('click', (e) => {
@@ -74,6 +79,53 @@ function initTaskModal() {
     });
 
     window.openTaskEdit = openEdit;
+}
+
+function initCalendarModal() {
+    const backdrop = document.getElementById('calendar-event-modal');
+    const form = document.getElementById('calendar-event-form');
+    const closeBtn = document.getElementById('calendar-modal-close');
+
+    if (!backdrop || !form) return;
+
+    const open = (block) => {
+        form.action = block.dataset.updateUrl;
+        document.getElementById('calendar-event-title').value = block.dataset.eventTitle || '';
+        document.getElementById('calendar-event-notes').value = block.dataset.eventNotes || '';
+        document.getElementById('calendar-event-starts').value = block.dataset.eventStarts || '';
+        document.getElementById('calendar-event-ends').value = block.dataset.eventEnds || '';
+        document.getElementById('calendar-event-recurrence').value = block.dataset.eventRecurrence || 'none';
+        document.getElementById('calendar-event-recurrence-until').value = block.dataset.eventRecurrenceUntil || '';
+
+        const tagged = (block.dataset.eventTagged || '').split(',').filter(Boolean);
+        form.querySelectorAll('.calendar-tag-checkbox').forEach((cb) => {
+            cb.checked = tagged.includes(cb.value);
+        });
+
+        backdrop.classList.add('open');
+        document.body.classList.add('modal-open');
+    };
+
+    const close = () => {
+        backdrop.classList.remove('open');
+        document.body.classList.remove('modal-open');
+    };
+
+    document.querySelectorAll('[data-calendar-event]').forEach((block) => {
+        block.addEventListener('click', (e) => {
+            if (e.target.closest('form')) return;
+            open(block);
+        });
+    });
+
+    closeBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        close();
+    });
+
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) close();
+    });
 }
 
 function growTree(size) {
@@ -129,6 +181,7 @@ function initTaskActions() {
         });
 
         const onStart = (x, y) => {
+            if (y > window.innerHeight - 120) return;
             startX = x;
             startY = y;
             currentX = 0;
@@ -139,8 +192,8 @@ function initTaskActions() {
         const onMove = (x, y) => {
             if (!dragging) return;
             if (Math.abs(y - startY) > Math.abs(x - startX)) return;
-            currentX = Math.min(0, x - startX);
-            card.style.transform = `translateX(${Math.max(-140, currentX)}px)`;
+            currentX = x - startX;
+            card.style.transform = `translateX(${Math.max(-140, Math.min(140, currentX))}px)`;
         };
 
         const onEnd = async () => {
@@ -155,10 +208,27 @@ function initTaskActions() {
                         headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
                     });
                     const data = await response.json();
-                    const dateEl = wrapper.querySelector('.task-card-date');
-                    if (dateEl && data.due_label) {
-                        dateEl.textContent = data.due_label;
-                        dateEl.classList.add('expiry-refreshed');
+                    const daysEl = wrapper.querySelector('.task-card-meta-days');
+                    if (daysEl && data.days_remaining !== undefined) {
+                        daysEl.textContent = `${data.days_remaining}d left`;
+                        daysEl.classList.add('expiry-refreshed');
+                    }
+                } catch {
+                    //
+                }
+            }
+
+            if (currentX >= SWIPE_THRESHOLD) {
+                try {
+                    const response = await fetch(wrapper.dataset.refreshUrl, {
+                        method: 'PATCH',
+                        headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+                    });
+                    const data = await response.json();
+                    const daysEl = wrapper.querySelector('.task-card-meta-days');
+                    if (daysEl && data.days_remaining !== undefined) {
+                        daysEl.textContent = `${data.days_remaining}d left`;
+                        daysEl.classList.add('expiry-refreshed');
                     }
                 } catch {
                     //
@@ -182,5 +252,6 @@ function initTaskActions() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTaskModal();
+    initCalendarModal();
     initTaskActions();
 });

@@ -18,7 +18,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body
-    class="min-h-dvh font-sans text-garden-text antialiased"
+    class="min-h-dvh font-sans text-garden-text antialiased @auth has-bottom-nav @endauth"
     style="background: linear-gradient(to bottom, {{ $weather['from'] ?? '#8ecae6' }}, {{ $weather['via'] ?? '#b8dff5' }}, {{ $weather['to'] ?? '#e0f2fe' }});"
 >
     @auth
@@ -31,9 +31,14 @@
         </div>
     @endauth
 
-    <div class="main-content mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-safe-tree pt-safe @yield('content-class')">
+    <div class="main-content mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-safe-nav pt-safe @yield('content-class')">
         @yield('content')
     </div>
+
+    @auth
+        @include('partials.bottom-nav')
+        @include('tasks.partials.modal')
+    @endauth
 
     @stack('modals')
 </body>

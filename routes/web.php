@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::post('/calendar', [CalendarController::class, 'store'])->name('calendar.store');
+    Route::patch('/calendar/{event}', [CalendarController::class, 'update'])->name('calendar.update');
     Route::delete('/calendar/{event}', [CalendarController::class, 'destroy'])->name('calendar.destroy');
 
     Route::get('/weather', [WeatherController::class, 'index'])->name('weather.index');

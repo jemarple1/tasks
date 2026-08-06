@@ -36,24 +36,24 @@ class TaskCategory extends Model
         return $this->hasMany(Task::class);
     }
 
-    /** @return array{urgent: self, later: self} */
+    /** @return array{immediate: self, longterm: self} */
     public static function seedDefaultsFor(User $user): array
     {
-        $urgent = static::create([
+        $immediate = static::create([
             'user_id' => $user->id,
-            'name' => 'Urgent',
+            'name' => 'Immediate',
             'color' => '#1d4ed8',
             'sort_order' => 0,
         ]);
 
-        $later = static::create([
+        $longterm = static::create([
             'user_id' => $user->id,
-            'name' => 'Later',
+            'name' => 'Long-term',
             'color' => '#6366f1',
             'sort_order' => 1,
         ]);
 
-        return compact('urgent', 'later');
+        return compact('immediate', 'longterm');
     }
 
     public function resolveRouteBinding($value, $field = null): ?self

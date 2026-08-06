@@ -17,6 +17,7 @@ class Task extends Model
         'created_by_user_id',
         'title',
         'notes',
+        'due_at',
         'category',
         'task_category_id',
         'archived_at',
@@ -31,6 +32,7 @@ class Task extends Model
         return [
             'archived_at' => 'datetime',
             'expires_at' => 'datetime',
+            'due_at' => 'date',
             'recurrence_until' => 'date',
         ];
     }
@@ -121,6 +123,7 @@ class Task extends Model
             'created_by_user_id' => $this->created_by_user_id,
             'title' => $this->title,
             'notes' => $this->notes,
+            'due_at' => $this->due_at,
             'category' => $this->category,
             'expires_at' => $nextExpiry,
             'task_category_id' => $this->task_category_id,

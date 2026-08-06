@@ -53,6 +53,7 @@ class TaskController extends Controller
             'assignee_username' => ['nullable', 'string', 'exists:users,username'],
             'recurrence' => ['required', 'in:'.implode(',', Task::RECURRENCE_OPTIONS)],
             'recurrence_until' => ['nullable', 'date', 'after:today'],
+            'due_at' => ['nullable', 'date'],
         ]);
 
         $category = TaskCategory::where('id', $validated['task_category_id'])
@@ -68,7 +69,8 @@ class TaskController extends Controller
         $assignee->tasks()->create([
             'title' => $validated['title'],
             'notes' => $validated['notes'] ?? null,
-            'category' => 'immediate',
+            'due_at' => $validated['due_at'] ?? null,
+            'category' => $this->legacyCategoryFor($category),
             'task_category_id' => $category->id,
             'created_by_user_id' => auth()->id(),
             'expires_at' => now()->addDays(7),
@@ -91,13 +93,17 @@ class TaskController extends Controller
             'task_category_id' => ['required', 'exists:task_categories,id'],
             'recurrence' => ['required', 'in:'.implode(',', Task::RECURRENCE_OPTIONS)],
             'recurrence_until' => ['nullable', 'date'],
+            'due_at' => ['nullable', 'date'],
         ]);
 
-        TaskCategory::where('id', $validated['task_category_id'])
+        $category = TaskCategory::where('id', $validated['task_category_id'])
             ->where('user_id', auth()->id())
             ->firstOrFail();
 
-        $task->update($validated);
+        $task->update([
+            ...$validated,
+            'category' => $this->legacyCategoryFor($category),
+        ]);
 
         return redirect()->route('tasks.index', array_filter([
             'category' => $request->input('filter_category'),
@@ -150,5 +156,10 @@ class TaskController extends Controller
         $completedTasks = auth()->user()->tasks()->completed()->with(['creator:id,username', 'taskCategory'])->latest('archived_at')->get();
 
         return view('tasks.complete', compact('completedTasks'));
+    }
+
+    private function legacyCategoryFor(TaskCategory $category): string
+    {
+        return str_contains(strtolower($category->name), 'long') ? 'longterm' : 'immediate';
     }
 }
