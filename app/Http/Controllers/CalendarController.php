@@ -119,12 +119,12 @@ class CalendarController extends Controller
             'week' => [
                 $date->copy()->startOfWeek(Carbon::SUNDAY),
                 $date->copy()->endOfWeek(Carbon::SATURDAY),
-                'Week of '.$date->copy()->startOfWeek(Carbon::SUNDAY)->format('M j, Y'),
+                'Week of '.$date->copy()->startOfWeek(Carbon::SUNDAY)->format('M j'),
             ],
             'day' => [
                 $date->copy()->startOfDay(),
                 $date->copy()->endOfDay(),
-                $date->format('l, F j, Y'),
+                $date->format('l, M j'),
             ],
             default => [
                 $date->copy()->startOfMonth()->startOfWeek(Carbon::SUNDAY),

@@ -3,35 +3,43 @@
 @section('title', 'Notifications — Tend')
 
 @section('content')
-    <header class="flex items-center justify-between pb-4 pt-2">
-        <div class="flex items-center gap-3">
+    <header class="page-header flex items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-3">
             <a href="{{ route('tasks.index') }}" class="nav-btn" aria-label="Back">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                <x-icon name="chevron-left" />
             </a>
-            <h1 class="font-title text-2xl font-bold text-garden-text">Notifications</h1>
+            <h1 class="page-title truncate">Notifications</h1>
         </div>
         @if ($notifications->whereNull('read_at')->isNotEmpty())
-            <form action="{{ route('notifications.read-all') }}" method="POST">
+            <form action="{{ route('notifications.read-all') }}" method="POST" class="shrink-0">
                 @csrf
-                <button type="submit" class="font-sans text-sm font-medium text-garden-accent">Mark all read</button>
+                <button type="submit" class="font-sans text-[13px] font-semibold text-garden-accent">Mark all read</button>
             </form>
         @endif
     </header>
 
     <ul class="space-y-2">
         @forelse ($notifications as $notification)
-            <li class="rounded-xl border-2 px-4 py-3 {{ $notification->read_at ? 'border-white/60 bg-white/60' : 'border-garden-accent/30 bg-white/90' }}">
-                <p class="font-sans text-base">{{ $notification->data['message'] ?? 'Notification' }}</p>
-                <p class="mt-1 font-sans text-sm text-garden-muted">{{ $notification->created_at->diffForHumans() }}</p>
-                @unless ($notification->read_at)
-                    <form action="{{ route('notifications.read', $notification->id) }}" method="POST" class="mt-2">
-                        @csrf @method('PATCH')
-                        <button type="submit" class="font-sans text-sm text-garden-accent">Mark read</button>
-                    </form>
-                @endunless
+            <li class="surface-card px-4 py-3 {{ $notification->read_at ? 'opacity-70' : '' }}" @if(!$notification->read_at) style="border-left: 4px solid var(--color-garden-accent)" @endif>
+                <p class="font-sans text-[15px] leading-snug text-garden-text">{{ $notification->data['message'] ?? 'Notification' }}</p>
+                <div class="mt-1.5 flex items-center justify-between gap-3">
+                    <p class="font-sans text-xs text-garden-muted">{{ $notification->created_at->diffForHumans() }}</p>
+                    @unless ($notification->read_at)
+                        <form action="{{ route('notifications.read', $notification->id) }}" method="POST">
+                            @csrf @method('PATCH')
+                            <button type="submit" class="font-sans text-xs font-semibold text-garden-accent">Mark read</button>
+                        </form>
+                    @endunless
+                </div>
             </li>
         @empty
-            <li class="py-12 text-center font-sans text-garden-muted">No notifications yet</li>
+            <li class="py-14 text-center">
+                <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/70 text-garden-muted">
+                    <x-icon name="bell" class="h-7 w-7" />
+                </div>
+                <p class="empty-title">All caught up</p>
+                <p class="empty-body">You have no notifications</p>
+            </li>
         @endforelse
     </ul>
 @endsection

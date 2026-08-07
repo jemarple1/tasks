@@ -39,7 +39,7 @@
                 @endif
                 @if ($task->isRecurring())
                     <span class="task-meta-dot">•</span>
-                    <span>↻ {{ $task->recurrence }}</span>
+                    <span class="inline-flex items-center gap-1"><x-icon name="repeat" class="h-3 w-3" /> {{ $task->recurrence }}</span>
                 @endif
                 @if ($task->isFromOtherUser())
                     <span class="task-meta-dot">•</span>
@@ -55,7 +55,7 @@
             @endif
         </button>
         <button type="button" class="task-complete-btn" aria-label="{{ $isTracking ? 'Remove from my list' : 'Complete task' }}">
-            <span class="task-complete-ring"></span>
+            <span class="task-complete-ring"><x-icon name="check" :stroke="2.6" /></span>
         </button>
     </div>
 </div>

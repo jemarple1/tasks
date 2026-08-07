@@ -141,7 +141,7 @@ function initCalendarModal() {
 function growTree(size) {
     const tree = document.getElementById('garden-tree');
     if (!tree || !size) return;
-    tree.style.fontSize = size;
+    tree.style.fontSize = `max(2.75rem, ${size})`;
     tree.classList.add('growing');
     setTimeout(() => tree.classList.remove('growing'), 500);
 }

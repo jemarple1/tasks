@@ -3,23 +3,28 @@
 @section('title', 'Tend')
 
 @section('content')
-    <header class="page-header flex items-center justify-between pb-2">
+    <header class="page-header flex items-center justify-between gap-2">
         @include('partials.weather-badge')
         <div class="flex items-center gap-1.5">
-            <a href="{{ route('notifications.index') }}" class="nav-btn relative" aria-label="Notifications">
-                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <a href="{{ route('notifications.index') }}" class="nav-btn" aria-label="Notifications">
+                <x-icon name="bell" />
                 @if(($unreadNotifications ?? 0) > 0)
                     <span class="nav-badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
                 @endif
             </a>
-            <a href="{{ route('tasks.complete.index') }}" class="nav-btn" aria-label="Completed">
-                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <a href="{{ route('tasks.complete.index') }}" class="nav-btn" aria-label="Completed tasks">
+                <x-icon name="check-circle" />
             </a>
             <a href="{{ route('settings.index') }}" class="nav-btn" aria-label="Settings">
-                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                <x-icon name="sliders" />
             </a>
         </div>
     </header>
+
+    <div class="mb-4">
+        <h1 class="page-title">Tasks</h1>
+        <p class="page-subtitle">{{ $tasks->count() }} {{ Str::plural('task', $tasks->count()) }} on your plate</p>
+    </div>
 
     <div class="category-filter mb-4">
         <a href="{{ route('tasks.index') }}" class="category-pill {{ !$activeCategory ? 'active' : '' }}">All</a>
@@ -34,18 +39,23 @@
         @endforeach
     </div>
 
-    <div class="task-list flex flex-1 flex-col gap-3">
+    <div class="task-list flex flex-1 flex-col gap-2.5">
         @forelse ($tasks as $task)
             @include('tasks.partials.task-item', ['task' => $task])
         @empty
-            <div class="py-16 text-center">
-                <p class="font-title text-2xl font-bold text-garden-text">Nothing here yet</p>
-                <p class="mt-2 font-sans text-base text-garden-muted">Tap + below to add a task</p>
+            <div class="py-14 text-center">
+                <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/70 text-garden-muted">
+                    <x-icon name="sparkle" class="h-7 w-7" />
+                </div>
+                <p class="empty-title">All clear</p>
+                <p class="empty-body">Tap the + button to add your first task</p>
             </div>
         @endforelse
     </div>
 
-    <p class="mt-4 text-center font-sans text-xs text-garden-muted">
-        Tap circle to complete · Tap task to edit · Swipe left remind tomorrow · Swipe right +7 days
-    </p>
+    @if ($tasks->isNotEmpty())
+        <p class="hint-text mt-5 text-center">
+            Tap the circle to complete · swipe left to remind tomorrow · swipe right for +7 days
+        </p>
+    @endif
 @endsection
