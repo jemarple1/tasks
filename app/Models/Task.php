@@ -15,6 +15,8 @@ class Task extends Model
     protected $fillable = [
         'user_id',
         'created_by_user_id',
+        'assigned_to_user_id',
+        'linked_task_id',
         'title',
         'notes',
         'due_at',
@@ -45,6 +47,21 @@ class Task extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function assignedTo(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to_user_id');
+    }
+
+    public function linkedTask(): BelongsTo
+    {
+        return $this->belongsTo(Task::class, 'linked_task_id');
+    }
+
+    public function trackingCopies()
+    {
+        return $this->hasMany(Task::class, 'linked_task_id');
     }
 
     public function taskCategory(): BelongsTo
@@ -80,7 +97,19 @@ class Task extends Model
     public function isFromOtherUser(): bool
     {
         return $this->created_by_user_id !== null
-            && $this->created_by_user_id !== $this->user_id;
+            && $this->created_by_user_id !== $this->user_id
+            && $this->linked_task_id === null;
+    }
+
+    public function isAssignedToOther(): bool
+    {
+        return $this->assigned_to_user_id !== null
+            && $this->assigned_to_user_id !== $this->user_id;
+    }
+
+    public function isTrackingCopy(): bool
+    {
+        return $this->linked_task_id !== null;
     }
 
     public function isRecurring(): bool
@@ -104,6 +133,10 @@ class Task extends Model
         $recurrenceUntil = $this->recurrence_until;
 
         $this->update(['archived_at' => now()]);
+
+        Task::query()
+            ->where('linked_task_id', $this->id)
+            ->update(['archived_at' => now()]);
 
         if ($recurrence !== 'none') {
             $this->spawnNextOccurrence($recurrence, $recurrenceUntil);

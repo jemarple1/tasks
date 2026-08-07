@@ -19,13 +19,60 @@
 @endphp
 
 <div class="calendar-page">
-    <header class="mb-3 flex shrink-0 items-center justify-between pt-1">
-        <h1 class="font-title text-xl font-bold text-garden-text">{{ $label }}</h1>
+    <header class="page-header mb-3 flex shrink-0 items-center justify-between">
+        <h1 class="font-title text-2xl font-bold text-garden-text">{{ $label }}</h1>
         <div class="flex gap-1">
             <a href="{{ $params($prevDate) }}" class="nav-btn text-sm">‹</a>
             <a href="{{ $params($nextDate) }}" class="nav-btn text-sm">›</a>
         </div>
     </header>
+
+    @if ($scope === 'personal')
+        <button type="button" id="calendar-add-toggle" class="surface-card mb-3 flex w-full items-center justify-between px-4 py-3 font-sans text-sm font-semibold text-garden-accent">
+            <span>Add event</span>
+            <span aria-hidden="true">+</span>
+        </button>
+        <div id="calendar-add-panel" class="surface-card mb-4 hidden space-y-3 p-4">
+            <form action="{{ route('calendar.store') }}" method="POST" class="space-y-3">
+                @csrf
+                <input type="text" name="title" placeholder="Event title" required class="input-field w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
+                <input type="datetime-local" name="starts_at" required value="{{ $date->format('Y-m-d\TH:i') }}" class="input-field w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
+                <input type="datetime-local" name="ends_at" placeholder="End time" class="input-field w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
+                <select name="recurrence" class="input-field w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
+                    <option value="none">Does not repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+                <input type="date" name="recurrence_until" class="input-field w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
+                @if ($connections->isNotEmpty())
+                    <div>
+                        <p class="mb-2 font-sans text-xs font-semibold uppercase tracking-wide text-garden-muted">Tag people</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($connections as $person)
+                                <label class="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 font-sans text-sm">
+                                    <input type="checkbox" name="tagged_usernames[]" value="{{ $person->username }}" class="rounded">
+                                    {{ '@'.$person->username }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+                <textarea name="notes" rows="2" placeholder="Notes" class="input-field w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-garden-accent"></textarea>
+                <button type="submit" class="w-full rounded-xl bg-garden-accent py-3 font-sans font-semibold text-white">Save event</button>
+            </form>
+        </div>
+    @endif
+
+    @if ($scope === 'shared' && $connectionCount === 0)
+        <div class="surface-card mb-4 p-4 font-sans text-sm text-garden-muted">
+            Connect with someone in Settings to see their shared calendar.
+        </div>
+    @elseif ($scope === 'shared' && $occurrences->isEmpty())
+        <div class="surface-card mb-4 p-4 font-sans text-sm text-garden-muted">
+            No shared events this period. Your connections' events and anything they tag you on will appear here.
+        </div>
+    @endif
 
     <div class="calendar-toggle mb-2">
         <a href="{{ $params($date, null, 'personal') }}" class="{{ $scope === 'personal' ? 'active' : '' }}">Personal</a>
@@ -158,40 +205,6 @@
                 </div>
             @endforelse
         </div>
-    @endif
-
-    @if ($scope === 'personal')
-        <details class="shrink-0 rounded-xl border-2 border-white/70 bg-white/80">
-            <summary class="cursor-pointer px-4 py-3 font-title text-base font-bold text-garden-text">Add event</summary>
-            <form action="{{ route('calendar.store') }}" method="POST" class="space-y-3 border-t border-slate-200 px-4 py-4">
-                @csrf
-                <input type="text" name="title" placeholder="Event title" required class="input-field w-full rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
-                <input type="datetime-local" name="starts_at" required value="{{ $date->format('Y-m-d\TH:i') }}" class="input-field w-full rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
-                <input type="datetime-local" name="ends_at" class="input-field w-full rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
-                <select name="recurrence" class="input-field w-full rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
-                    <option value="none">Does not repeat</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                </select>
-                <input type="date" name="recurrence_until" placeholder="Repeat until" class="input-field w-full rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent">
-                @if ($connections->isNotEmpty())
-                    <div>
-                        <p class="mb-2 font-sans text-sm font-semibold text-garden-muted">Tag people</p>
-                        <div class="flex flex-wrap gap-2">
-                            @foreach ($connections as $person)
-                                <label class="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-sans text-sm">
-                                    <input type="checkbox" name="tagged_usernames[]" value="{{ $person->username }}" class="rounded">
-                                    {{ '@'.$person->username }}
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-                <textarea name="notes" rows="2" placeholder="Notes" class="input-field w-full resize-none rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-garden-accent"></textarea>
-                <button type="submit" class="w-full rounded-xl bg-garden-accent py-3 font-sans font-semibold text-white">Save event</button>
-            </form>
-        </details>
     @endif
 </div>
 @endsection

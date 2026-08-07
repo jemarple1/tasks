@@ -23,12 +23,18 @@
             </div>
             <div class="mb-4" id="assignee-field">
                 <label for="assignee_username" class="mb-1.5 block font-sans text-sm font-semibold uppercase tracking-wide text-garden-muted">Assign to</label>
-                <select id="assignee_username" name="assignee_username" class="input-field w-full rounded-xl border-2 border-slate-300 bg-slate-50 px-4 py-3 text-garden-text outline-none focus:border-garden-accent">
+                <select id="assignee_username" name="assignee_username" class="input-field w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-garden-text outline-none focus:border-garden-accent">
                     <option value="">Me ({{ '@'.auth()->user()->username }})</option>
                     @foreach (auth()->user()->connectedUsers() as $person)
                         <option value="{{ $person->username }}">{{ '@'.$person->username }}</option>
                     @endforeach
                 </select>
+            </div>
+            <div class="mb-4 hidden" id="show-on-my-list-field">
+                <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <input type="checkbox" name="show_on_my_list" value="1" class="h-4 w-4 rounded border-slate-300 text-garden-accent">
+                    <span class="font-sans text-sm text-garden-text">Also show on my task list</span>
+                </label>
             </div>
             <div class="mb-4">
                 <label for="task-category-id" class="mb-1.5 block font-sans text-sm font-semibold uppercase tracking-wide text-garden-muted">Category</label>

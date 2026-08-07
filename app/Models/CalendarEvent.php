@@ -58,6 +58,11 @@ class CalendarEvent extends Model
             })
             ->where(function ($query) use ($rangeStart, $rangeEnd) {
                 $query->whereBetween('starts_at', [$rangeStart, $rangeEnd])
+                    ->orWhere(function ($inner) use ($rangeStart, $rangeEnd) {
+                        $inner->whereNotNull('ends_at')
+                            ->where('starts_at', '<=', $rangeEnd)
+                            ->where('ends_at', '>=', $rangeStart);
+                    })
                     ->orWhere('recurrence', '!=', 'none');
             })
             ->get();
@@ -73,9 +78,20 @@ class CalendarEvent extends Model
 
         return static::query()
             ->with(['user:id,username', 'taggedUsers:id,username'])
-            ->whereIn('user_id', $others)
+            ->where(function ($query) use ($others, $userId) {
+                $query->whereIn('user_id', $others)
+                    ->orWhere(function ($q) use ($others, $userId) {
+                        $q->whereHas('taggedUsers', fn ($t) => $t->where('users.id', $userId))
+                            ->whereIn('user_id', $others);
+                    });
+            })
             ->where(function ($query) use ($rangeStart, $rangeEnd) {
                 $query->whereBetween('starts_at', [$rangeStart, $rangeEnd])
+                    ->orWhere(function ($inner) use ($rangeStart, $rangeEnd) {
+                        $inner->whereNotNull('ends_at')
+                            ->where('starts_at', '<=', $rangeEnd)
+                            ->where('ends_at', '>=', $rangeStart);
+                    })
                     ->orWhere('recurrence', '!=', 'none');
             })
             ->get();

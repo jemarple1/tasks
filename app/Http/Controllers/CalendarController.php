@@ -40,6 +40,7 @@ class CalendarController extends Controller
             'label' => $label,
             'occurrences' => $occurrences,
             'connections' => $user->connectedUsers(),
+            'connectionCount' => $user->connectedUsers()->count(),
             'calendarParams' => fn (Carbon $d, ?string $overrideView = null) => $this->calendarUrl($d, $overrideView ?? $view, $scope),
         ]);
     }

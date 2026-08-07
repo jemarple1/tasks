@@ -21,8 +21,6 @@ class AppServiceProvider extends ServiceProvider
             if (auth()->check()) {
                 $user = auth()->user();
                 $view->with([
-                    'treeEmoji' => $user->tree_emoji ?? '🌳',
-                    'treeSize' => $user->treeFontSize(),
                     'unreadNotifications' => $user->unreadNotifications()->count(),
                     'navCategories' => $user->taskCategories,
                 ]);

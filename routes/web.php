@@ -4,6 +4,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ConnectionController;
+use App\Http\Controllers\GardenController;
+use App\Http\Controllers\GroceryController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskController;
@@ -30,6 +32,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/calendar', [CalendarController::class, 'store'])->name('calendar.store');
     Route::patch('/calendar/{event}', [CalendarController::class, 'update'])->name('calendar.update');
     Route::delete('/calendar/{event}', [CalendarController::class, 'destroy'])->name('calendar.destroy');
+
+    Route::get('/grocery', [GroceryController::class, 'index'])->name('grocery.index');
+    Route::post('/grocery', [GroceryController::class, 'store'])->name('grocery.store');
+    Route::patch('/grocery/{item}/complete', [GroceryController::class, 'complete'])->name('grocery.complete');
+    Route::delete('/grocery/{item}', [GroceryController::class, 'destroy'])->name('grocery.destroy');
+
+    Route::get('/garden', [GardenController::class, 'index'])->name('garden.index');
 
     Route::get('/weather', [WeatherController::class, 'index'])->name('weather.index');
 

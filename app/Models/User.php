@@ -37,6 +37,11 @@ class User extends Authenticatable
         return $this->hasMany(CalendarEvent::class);
     }
 
+    public function groceryItems(): HasMany
+    {
+        return $this->hasMany(GroceryItem::class);
+    }
+
     public function taskCategories(): HasMany
     {
         return $this->hasMany(TaskCategory::class)->orderBy('sort_order');

@@ -15,10 +15,19 @@ function initTaskModal() {
     const recurrenceSelect = document.getElementById('task-recurrence');
     const recurrenceUntil = document.getElementById('task-recurrence-until');
     const assigneeField = document.getElementById('assignee-field');
+    const assigneeSelect = document.getElementById('assignee_username');
+    const showOnMyListField = document.getElementById('show-on-my-list-field');
 
     if (!backdrop || !form || openBtns.length === 0) return;
 
     const storeUrl = form.action;
+
+    const syncAssigneeExtras = () => {
+        const hasAssignee = assigneeSelect && assigneeSelect.value !== '';
+        if (showOnMyListField) showOnMyListField.classList.toggle('hidden', !hasAssignee);
+    };
+
+    assigneeSelect?.addEventListener('change', syncAssigneeExtras);
 
     const open = () => {
         backdrop.classList.add('open');
@@ -39,6 +48,7 @@ function initTaskModal() {
         if (recurrenceUntil) recurrenceUntil.value = '';
         if (dueAtInput) dueAtInput.value = '';
         if (assigneeField) assigneeField.classList.remove('hidden');
+        syncAssigneeExtras();
     };
 
     const openAdd = () => {
@@ -177,6 +187,7 @@ function initTaskActions() {
         });
 
         editBtn.addEventListener('click', () => {
+            if (editBtn.hasAttribute('data-no-edit')) return;
             window.openTaskEdit?.(wrapper);
         });
 
@@ -250,8 +261,42 @@ function initTaskActions() {
     });
 }
 
+function initCalendarAddPanel() {
+    const toggle = document.getElementById('calendar-add-toggle');
+    const panel = document.getElementById('calendar-add-panel');
+    if (!toggle || !panel) return;
+
+    toggle.addEventListener('click', () => {
+        panel.classList.toggle('hidden');
+    });
+}
+
+function initGrocery() {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    document.querySelectorAll('[data-grocery-item]').forEach((row) => {
+        const btn = row.querySelector('.grocery-check');
+        if (!btn) return;
+
+        btn.addEventListener('click', async () => {
+            row.classList.add('opacity-50');
+            try {
+                await fetch(row.dataset.completeUrl, {
+                    method: 'PATCH',
+                    headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+                });
+                row.remove();
+            } catch {
+                row.classList.remove('opacity-50');
+            }
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initTaskModal();
     initCalendarModal();
+    initCalendarAddPanel();
     initTaskActions();
+    initGrocery();
 });
