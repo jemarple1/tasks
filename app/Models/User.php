@@ -60,6 +60,22 @@ class User extends Authenticatable
         return User::whereIn('id', $outgoing->merge($incoming)->unique())->orderBy('username')->get();
     }
 
+    /** @return list<int> */
+    public function circleUserIds(): array
+    {
+        return $this->connectedUsers()
+            ->pluck('id')
+            ->push($this->id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    public function canAccessCircleUser(int $userId): bool
+    {
+        return in_array($userId, $this->circleUserIds(), true);
+    }
+
     public function isConnectedTo(User $user): bool
     {
         if ($this->id === $user->id) {

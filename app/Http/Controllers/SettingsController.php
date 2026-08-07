@@ -11,10 +11,14 @@ class SettingsController extends Controller
 {
     public function index(): View
     {
+        $user = auth()->user();
+
         return view('settings.index', [
-            'connections' => auth()->user()->connectedUsers(),
-            'categories' => auth()->user()->taskCategories,
+            'connections' => $user->connectedUsers(),
+            'categories' => $user->taskCategories,
             'treeOptions' => User::TREE_OPTIONS,
+            'completedCount' => $user->completedTasksCount(),
+            'treeSize' => $user->treeFontSize(),
         ]);
     }
 

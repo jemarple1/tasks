@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CalendarEvent;
 use App\Models\User;
+use App\Services\CircleColorService;
 use App\Services\RecurrenceExpander;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -17,31 +18,28 @@ class CalendarController extends Controller
         $view = in_array($request->query('view'), ['month', 'week', 'day'], true)
             ? $request->query('view')
             : 'month';
-        $scope = $request->query('scope') === 'shared' ? 'shared' : 'personal';
         $date = Carbon::parse($request->query('date', now()->toDateString()));
 
         [$rangeStart, $rangeEnd, $label] = $this->resolveRange($view, $date);
         $user = auth()->user();
-        $connectedIds = $user->connectedUsers()->pluck('id')->push($user->id)->all();
+        $circleIds = $user->circleUserIds();
+        $userColors = CircleColorService::mapForUser($user);
 
-        $rawEvents = $scope === 'shared'
-            ? CalendarEvent::forSharedCalendar($user->id, $connectedIds, $rangeStart, $rangeEnd)
-            : CalendarEvent::forPersonalCalendar($user->id, $rangeStart, $rangeEnd);
+        $rawEvents = CalendarEvent::forCircleCalendar($circleIds, $rangeStart, $rangeEnd);
 
         $occurrences = RecurrenceExpander::expand($rawEvents, $rangeStart, $rangeEnd)
             ->groupBy(fn (array $o) => $o['occurrence_at']->toDateString());
 
         return view('calendar.index', [
             'view' => $view,
-            'scope' => $scope,
             'date' => $date,
             'rangeStart' => $rangeStart,
             'rangeEnd' => $rangeEnd,
             'label' => $label,
             'occurrences' => $occurrences,
             'connections' => $user->connectedUsers(),
-            'connectionCount' => $user->connectedUsers()->count(),
-            'calendarParams' => fn (Carbon $d, ?string $overrideView = null) => $this->calendarUrl($d, $overrideView ?? $view, $scope),
+            'userColors' => $userColors,
+            'calendarParams' => fn (Carbon $d, ?string $overrideView = null) => $this->calendarUrl($d, $overrideView ?? $view),
         ]);
     }
 
@@ -72,7 +70,6 @@ class CalendarController extends Controller
         return redirect()->route('calendar.index', [
             'date' => Carbon::parse($validated['starts_at'])->toDateString(),
             'view' => 'day',
-            'scope' => 'personal',
         ]);
     }
 
@@ -113,7 +110,6 @@ class CalendarController extends Controller
         return redirect()->route('calendar.index', [
             'date' => Carbon::parse($validated['starts_at'])->toDateString(),
             'view' => 'day',
-            'scope' => 'personal',
         ]);
     }
 
@@ -138,12 +134,11 @@ class CalendarController extends Controller
         };
     }
 
-    private function calendarUrl(Carbon $date, string $view, string $scope): array
+    private function calendarUrl(Carbon $date, string $view): array
     {
         return [
             'date' => $date->toDateString(),
             'view' => $view,
-            'scope' => $scope,
         ];
     }
 

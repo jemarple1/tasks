@@ -48,43 +48,15 @@ class CalendarEvent extends Model
             ->firstOrFail();
     }
 
-    public static function forPersonalCalendar(int $userId, Carbon $rangeStart, Carbon $rangeEnd)
+    public static function forCircleCalendar(array $userIds, Carbon $rangeStart, Carbon $rangeEnd)
     {
-        return static::query()
-            ->with(['user:id,username', 'taggedUsers:id,username'])
-            ->where(function ($query) use ($userId) {
-                $query->where('user_id', $userId)
-                    ->orWhereHas('taggedUsers', fn ($q) => $q->where('users.id', $userId));
-            })
-            ->where(function ($query) use ($rangeStart, $rangeEnd) {
-                $query->whereBetween('starts_at', [$rangeStart, $rangeEnd])
-                    ->orWhere(function ($inner) use ($rangeStart, $rangeEnd) {
-                        $inner->whereNotNull('ends_at')
-                            ->where('starts_at', '<=', $rangeEnd)
-                            ->where('ends_at', '>=', $rangeStart);
-                    })
-                    ->orWhere('recurrence', '!=', 'none');
-            })
-            ->get();
-    }
-
-    public static function forSharedCalendar(int $userId, array $connectedIds, Carbon $rangeStart, Carbon $rangeEnd)
-    {
-        $others = array_values(array_filter($connectedIds, fn ($id) => $id !== $userId));
-
-        if (empty($others)) {
+        if ($userIds === []) {
             return collect();
         }
 
         return static::query()
             ->with(['user:id,username', 'taggedUsers:id,username'])
-            ->where(function ($query) use ($others, $userId) {
-                $query->whereIn('user_id', $others)
-                    ->orWhere(function ($q) use ($others, $userId) {
-                        $q->whereHas('taggedUsers', fn ($t) => $t->where('users.id', $userId))
-                            ->whereIn('user_id', $others);
-                    });
-            })
+            ->whereIn('user_id', $userIds)
             ->where(function ($query) use ($rangeStart, $rangeEnd) {
                 $query->whereBetween('starts_at', [$rangeStart, $rangeEnd])
                     ->orWhere(function ($inner) use ($rangeStart, $rangeEnd) {

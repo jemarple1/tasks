@@ -50,8 +50,10 @@ class GroceryItem extends Model
 
     public function resolveRouteBinding($value, $field = null): ?self
     {
+        $circleIds = auth()->user()->circleUserIds();
+
         return $this->where($field ?? $this->getRouteKeyName(), $value)
-            ->where('user_id', auth()->id())
+            ->whereIn('user_id', $circleIds)
             ->firstOrFail();
     }
 }

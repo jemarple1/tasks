@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\GroceryItem;
+use App\Services\CircleColorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,14 +14,24 @@ class GroceryController extends Controller
     public function index(): View
     {
         $user = auth()->user();
+        $circleIds = $user->circleUserIds();
 
-        $user->groceryItems()
+        GroceryItem::query()
+            ->whereIn('user_id', $circleIds)
             ->where('created_at', '<', now()->subWeek())
             ->delete();
 
-        $items = $user->groceryItems()->orderBy('created_at')->get();
+        $items = GroceryItem::query()
+            ->with('user:id,username')
+            ->whereIn('user_id', $circleIds)
+            ->orderBy('created_at')
+            ->get();
 
-        return view('grocery.index', compact('items'));
+        return view('grocery.index', [
+            'items' => $items,
+            'userColors' => CircleColorService::mapForUser($user),
+            'connections' => $user->connectedUsers(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -37,7 +48,7 @@ class GroceryController extends Controller
 
     public function complete(GroceryItem $item): JsonResponse
     {
-        abort_unless($item->user_id === auth()->id(), 403);
+        abort_unless(auth()->user()->canAccessCircleUser($item->user_id), 403);
 
         $item->markComplete();
 
@@ -46,7 +57,7 @@ class GroceryController extends Controller
 
     public function destroy(GroceryItem $item): RedirectResponse
     {
-        abort_unless($item->user_id === auth()->id(), 403);
+        abort_unless(auth()->user()->canAccessCircleUser($item->user_id), 403);
         $item->delete();
 
         return back();

@@ -4,7 +4,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ConnectionController;
-use App\Http\Controllers\GardenController;
 use App\Http\Controllers\GroceryController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SettingsController;
@@ -38,7 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/grocery/{item}/complete', [GroceryController::class, 'complete'])->name('grocery.complete');
     Route::delete('/grocery/{item}', [GroceryController::class, 'destroy'])->name('grocery.destroy');
 
-    Route::get('/garden', [GardenController::class, 'index'])->name('garden.index');
+    Route::redirect('/garden', '/settings');
 
     Route::get('/weather', [WeatherController::class, 'index'])->name('weather.index');
 

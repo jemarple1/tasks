@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Tend">
     <meta name="application-name" content="Tend">
-    <meta name="theme-color" content="{{ $weather['theme'] ?? '#a8daf0' }}">
+    <meta name="theme-color" content="#7ec8e3">
     <meta name="format-detection" content="telephone=no">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -17,11 +17,8 @@
     <title>@yield('title', 'Tend')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body
-    class="min-h-dvh font-sans text-garden-text antialiased @auth has-bottom-nav @endauth"
-    style="background: linear-gradient(165deg, {{ $weather['from'] ?? '#8ecae6' }} 0%, {{ $weather['via'] ?? '#b8dff5' }} 45%, {{ $weather['to'] ?? '#e0f2fe' }} 100%);"
->
-    <div class="main-content mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-safe-nav pt-safe @yield('content-class')">
+<body class="sky-background min-h-dvh font-sans text-garden-text antialiased @auth has-bottom-nav @endauth">
+    <div class="main-content mx-auto flex min-h-dvh max-w-lg flex-col overflow-x-hidden px-4 pb-safe-nav pt-safe @yield('content-class')">
         @yield('content')
     </div>
 

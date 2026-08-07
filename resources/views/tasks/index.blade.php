@@ -4,24 +4,19 @@
 
 @section('content')
     <header class="page-header flex items-center justify-between pb-2">
-        <a href="{{ route('weather.index') }}" class="surface-card flex items-center gap-2 px-3 py-2 transition active:scale-95" aria-label="Weather">
-            <span class="text-2xl" role="img" aria-hidden="true">{{ $weather['emoji'] ?? '🌤' }}</span>
-            @if(isset($weather['temperature']))
-                <span class="font-sans text-sm font-semibold text-garden-text">{{ $weather['temperature'] }}°</span>
-            @endif
-        </a>
+        @include('partials.weather-badge')
         <div class="flex items-center gap-1.5">
             <a href="{{ route('notifications.index') }}" class="nav-btn relative" aria-label="Notifications">
-                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
                 @if(($unreadNotifications ?? 0) > 0)
                     <span class="nav-badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
                 @endif
             </a>
             <a href="{{ route('tasks.complete.index') }}" class="nav-btn" aria-label="Completed">
-                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
             </a>
             <a href="{{ route('settings.index') }}" class="nav-btn" aria-label="Settings">
-                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
             </a>
         </div>
     </header>
